@@ -202,3 +202,16 @@
 .chart svg {
   display: block;
 }
+
+/* GitHub icon below the chart, centred */
+.github-link {
+  align-self: center;
+  margin: 24px 0;
+  color: var(--text);
+  transition: color 0.2s;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--text-h);
+  }
+}
