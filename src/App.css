@@ -199,8 +199,12 @@
   text-align: left;
 }
 
+/* Scale the chart like a photo: full container width, height follows
+   automatically from the viewBox proportions */
 .chart svg {
   display: block;
+  width: 100%;
+  height: auto;
 }
 
 /* GitHub icon below the chart, centred */

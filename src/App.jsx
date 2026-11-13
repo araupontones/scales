@@ -1,60 +1,35 @@
-import { useLayoutEffect, useRef, useState } from "react";
 import { scaleLinear, scaleBand } from "d3-scale";
 import "./App.css";
 import { data } from "./data";
 import { chartStyle } from "./style";
 
+// The chart is designed once, at a fixed size. On screen it is scaled
+// as a whole (like a photo) to fit the available width — see viewBox below.
+const widthPlot = 650;
 const heightPlot = 360;
+const margin = { top: 95, right: 20, bottom: 55, left: 20 };
 
-// Measures the width of an element and updates whenever it is resized
-// (window resize, phone rotation, etc.)
-function useContainerWidth() {
-  const ref = useRef(null);
-  const [width, setWidth] = useState(0);
+const widthPanel = widthPlot + margin.left + margin.right;
+const heightPanel = heightPlot + margin.top + margin.bottom;
 
-  useLayoutEffect(() => {
-    const observer = new ResizeObserver(([entry]) => {
-      setWidth(entry.contentRect.width);
-    });
-    observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
+const xScale = scaleLinear()
+  .domain([0, Math.max(...data.map((d) => d.count))])
+  .range([0, widthPlot]);
 
-  return [ref, width];
-}
+const yScale = scaleBand()
+  .domain(data.map((d) => d.name))
+  .range([heightPlot, 0])
+  .padding(0.4);
 
-function Chart({ widthPanel }) {
-  // On narrow screens, long text is split into two lines, so the
-  // top and bottom margins need more room.
-  const narrow = widthPanel < 520;
+// set gridlines for the chart
+const ticks = xScale.ticks(10);
 
-  const margin = {
-    top: narrow ? 112 : 95,
-    right: 20,
-    bottom: narrow ? 73 : 55,
-    left: 20,
-  };
-
-  const widthPlot = widthPanel - margin.left - margin.right;
-  const heightPanel = heightPlot + margin.top + margin.bottom;
-
-  const xScale = scaleLinear()
-    .domain([0, Math.max(...data.map((d) => d.count))])
-    .range([0, widthPlot]);
-
-  const yScale = scaleBand()
-    .domain(data.map((d) => d.name))
-    .range([heightPlot, 0])
-    .padding(0.4);
-
-  // fewer gridlines when there is less room, so the labels don't collide
-  const ticks = xScale.ticks(narrow ? 5 : 10);
-
-  // y position of the first caption line, just below the plot
-  const captionY = margin.top + heightPlot + 25;
-
+function Chart() {
   return (
-    <svg width={widthPanel} height={heightPanel}>
+    // viewBox = the chart's own coordinate system (its "design size").
+    // width 100% + height auto (in App.css) let the browser scale the whole
+    // picture to the screen, keeping its proportions and look.
+    <svg viewBox={`0 0 ${widthPanel} ${heightPanel}`}>
       {/* Economist style: red rule across the top of the panel */}
       <line
         x1={margin.left}
@@ -84,23 +59,12 @@ function Chart({ widthPanel }) {
         Escape artists
       </text>
       <text
+        x={margin.left}
         y={62}
         fontSize={chartStyle.subtitle.fontSize}
         fill={chartStyle.subtitle.fill}
       >
-        {narrow ? (
-          <>
-            {/* <tspan> = a line inside a <text>; dy moves it down */}
-            <tspan x={margin.left}>Number of laboratory-acquired</tspan>
-            <tspan x={margin.left} dy={18}>
-              infections, 1970–2021
-            </tspan>
-          </>
-        ) : (
-          <tspan x={margin.left}>
-            Number of laboratory-acquired infections, 1970–2021
-          </tspan>
-        )}
+        Number of laboratory-acquired infections, 1970–2021
       </text>
 
       {/* Plot: everything inside is shifted into place once */}
@@ -152,44 +116,34 @@ function Chart({ widthPanel }) {
 
       {/* Caption: panel coordinates, in the bottom margin below the plot */}
       <text
-        y={captionY}
+        x={margin.left}
+        y={margin.top + heightPlot + 25}
         fontSize={chartStyle.caption.fontSize}
         fill={chartStyle.caption.fill}
       >
-        {narrow ? (
-          <>
-            <tspan x={margin.left}>
-              Sources: Laboratory-Acquired Infection Database;
-            </tspan>
-            <tspan x={margin.left} dy={18}>
-              American Biological Safety Association
-            </tspan>
-          </>
-        ) : (
-          <tspan x={margin.left}>
-            Sources: Laboratory-Acquired Infection Database; American Biological
-            Safety Association
-          </tspan>
-        )}
-        <tspan x={margin.left} dy={18}>
-          The Economist
-        </tspan>
+        Sources: Laboratory-Acquired Infection Database; American Biological
+        Safety Association
+      </text>
+      <text
+        x={margin.left}
+        y={margin.top + heightPlot + 43}
+        fontSize={chartStyle.caption.fontSize}
+        fill={chartStyle.caption.fill}
+      >
+        The Economist
       </text>
     </svg>
   );
 }
 
 function App() {
-  const [chartRef, chartWidth] = useContainerWidth();
-
   return (
     <>
       <h2 className="page-title">
         Project: Recreating a graph from the Economist
       </h2>
-      <div className="chart" ref={chartRef}>
-        {/* width is 0 until the first measurement, so wait for it */}
-        {chartWidth > 0 && <Chart widthPanel={chartWidth} />}
+      <div className="chart">
+        <Chart />
       </div>
 
       {/* Link to the source code on GitHub */}
